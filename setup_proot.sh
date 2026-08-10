@@ -12,6 +12,8 @@ ok()   { echo -e "${GREEN}[✓]${RESET} $1"; }
 warn() { echo -e "${YELLOW}[!]${RESET} $1"; }
 err()  { echo -e "${RED}[✗]${RESET} $1"; exit 1; }
 
+REPO="https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main"
+
 # Check Termux
 if [ "$PREFIX" != "/data/data/com.termux/files/usr" ] ||
    [ ! -d "/data/data/com.termux" ]; then
@@ -56,16 +58,21 @@ EOF
 fi
 
 # Create Bedrock Server directory
+info "Preparing Bedrock Server directory..."
+
 proot-distro login debian -- mkdir -p "/root/Bedrock Server" ||
     err "Failed to create Bedrock Server directory."
 
+# Run setup_env.sh inside Debian
+echo ""
+info "Entering Debian..."
+echo ""
+
+proot-distro login debian -- bash -c "
+    cd '/root/Bedrock Server' &&
+    curl -fsSL '$REPO/setup_env.sh' | bash
+" || err "setup_env.sh failed."
+
 echo ""
 echo -e "${GREEN}${BOLD}✓ BedrockTermux setup complete!${RESET}"
-echo ""
-echo -e "  ${BOLD}Enter Debian:${RESET} ${CYAN}pdd${RESET}"
-echo ""
-echo -e "  ${BOLD}Next:${RESET}"
-echo -e "  ${CYAN}pdd${RESET}"
-echo -e "  ${CYAN}cd ~/Bedrock\\ Server${RESET}"
-echo -e "  ${CYAN}curl -fsSL https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup_env.sh | bash${RESET}"
 echo ""
