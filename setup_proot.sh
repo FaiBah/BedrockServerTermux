@@ -23,19 +23,20 @@ fi
 ok "Termux detected."
 
 # Check proot-distro
-if ! command -v proot-distro >/dev/null 2>&1; then
+if command -v proot-distro >/dev/null 2>&1; then
+    ok "proot-distro already installed."
+else
     info "Installing proot-distro..."
     pkg install proot-distro -y ||
         err "Failed to install proot-distro."
-else
-    ok "proot-distro already installed."
 fi
 
 # Check Debian
-if proot-distro login debian -- echo >/dev/null 2>&1; then
+if proot-distro login debian -- true >/dev/null 2>&1; then
     ok "Debian is already installed."
 else
     info "Installing Debian..."
+
     proot-distro install debian ||
         err "Debian installation failed."
 fi
@@ -57,20 +58,17 @@ EOF
     ok "'pdd' created."
 fi
 
-# Create Bedrock Server directory
-info "Preparing Bedrock Server directory..."
-
-proot-distro login debian -- mkdir -p "/root/Bedrock Server" ||
-    err "Failed to create Bedrock Server directory."
-
-# Run setup_env.sh inside Debian
+# Enter Debian and setup environment
 echo ""
 info "Entering Debian..."
 echo ""
 
 proot-distro login debian -- bash -c "
-    cd '/root/Bedrock Server' &&
-    curl -fsSL '$REPO/setup_env.sh' | bash
+    mkdir -p '/root/Bedrock Server'
+    cd '/root/Bedrock Server'
+    curl -fsSL '$REPO/setup_env.sh' -o setup_env.sh
+    chmod +x setup_env.sh
+    ./setup_env.sh
 " || err "setup_env.sh failed."
 
 echo ""
