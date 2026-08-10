@@ -95,4 +95,4 @@ Bedrock Server/
 
 ## License
 
-MIT (or update to match your actual license)
+MIT
