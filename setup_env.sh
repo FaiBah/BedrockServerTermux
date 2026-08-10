@@ -26,8 +26,11 @@ ok "Debian environment detected."
 
 # Update package lists
 info "Updating package lists..."
+
 apt update -y ||
     err "Failed to update package lists."
+
+ok "Package lists updated."
 
 # Check dependencies
 info "Checking dependencies..."
@@ -48,6 +51,8 @@ if [ -n "$MISSING" ]; then
 
     apt install -y $MISSING ||
         err "Failed to install dependencies."
+
+    ok "Missing dependencies installed."
 else
     ok "All required packages are installed."
 fi
@@ -58,8 +63,19 @@ info "Updating installed dependencies..."
 apt install --only-upgrade -y $PACKAGES ||
     err "Failed to update dependencies."
 
+ok "Dependencies updated."
+
 # Create Bedrock Server directory
-mkdir -p "$SERVER_ROOT"
+if [ -d "$SERVER_ROOT" ]; then
+    ok "Bedrock Server directory already exists."
+else
+    info "Creating Bedrock Server directory..."
+
+    mkdir -p "$SERVER_ROOT"
+
+    ok "Bedrock Server directory created."
+fi
+
 cd "$SERVER_ROOT"
 
 # Download install/update script

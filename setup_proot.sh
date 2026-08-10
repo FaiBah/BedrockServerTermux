@@ -12,8 +12,6 @@ ok()   { echo -e "${GREEN}[✓]${RESET} $1"; }
 warn() { echo -e "${YELLOW}[!]${RESET} $1"; }
 err()  { echo -e "${RED}[✗]${RESET} $1"; exit 1; }
 
-REPO="https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main"
-
 # Check Termux
 if [ "$PREFIX" != "/data/data/com.termux/files/usr" ] ||
    [ ! -d "/data/data/com.termux" ]; then
@@ -58,19 +56,6 @@ EOF
     ok "'pdd' created."
 fi
 
-# Enter Debian and setup environment
 echo ""
-info "Entering Debian..."
-echo ""
-
-proot-distro login debian -- bash -c "
-    mkdir -p '/root/Bedrock Server'
-    cd '/root/Bedrock Server'
-    curl -fsSL '$REPO/setup_env.sh' -o setup_env.sh
-    chmod +x setup_env.sh
-    ./setup_env.sh
-" || err "setup_env.sh failed."
-
-echo ""
-echo -e "${GREEN}${BOLD}✓ BedrockTermux setup complete!${RESET}"
+echo -e "${GREEN}${BOLD}✓ BedrockTermux environment ready!${RESET}"
 echo ""
