@@ -5,7 +5,6 @@ A management system for running a Minecraft Bedrock Dedicated Server on Android 
 ## Requirements
 
 - [Termux](https://termux.dev) (F-Droid build recommended)
-- Sufficient free storage for a Debian proot and server files (approximately 1–2 GB)
 
 ## Installation
 
@@ -16,6 +15,12 @@ curl -fsSL https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/set
 ```
 
 This installs `proot-distro`, installs Debian, and creates a `pdd` command for entering the environment.
+
+Optionally, create a symlink to access the Debian filesystem directly from Termux:
+
+```bash
+ln -s $PREFIX/var/lib/proot-distro/containers/debian/rootfs ~/debian
+```
 
 **2. Enter Debian and run the setup script:**
 
