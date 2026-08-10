@@ -13,7 +13,7 @@ ok()   { echo -e "${GREEN}[✓]${RESET} $1"; }
 warn() { echo -e "${YELLOW}[!]${RESET} $1"; }
 err()  { echo -e "${RED}[✗]${RESET} $1"; }
 
-TITLE="Run Server"
+TITLE="Rename Server"
 SERVER_ROOT="$HOME/Bedrock Server/Data"
 VERSION_FILE="version.txt"
 
@@ -21,7 +21,7 @@ show_title() {
     clear
     echo ""
     echo -e "${BOLD}${CYAN}========================================${RESET}"
-    echo -e "${BOLD}              ${TITLE}${RESET}"
+    echo -e "${BOLD}             ${TITLE}${RESET}"
     echo -e "${BOLD}${CYAN}========================================${RESET}"
     echo ""
 }
@@ -80,7 +80,7 @@ while true; do
     fi
 
     SERVER_DIR="${SERVER_FOLDERS[$((choice - 1))]}"
-    SERVER_NAME="$(basename "$SERVER_DIR")"
+    OLD_NAME="$(basename "$SERVER_DIR")"
     SERVER_VERSION="Unknown"
 
     if [ -f "$SERVER_DIR/$VERSION_FILE" ]; then
@@ -88,67 +88,65 @@ while true; do
         [ -n "$VERSION" ] && SERVER_VERSION="$VERSION"
     fi
 
-    if [ ! -f "$SERVER_DIR/bedrock_server" ]; then
-        err "bedrock_server binary not found in $SERVER_DIR."
-        sleep 2
+    echo ""
+    echo -e "${BOLD}Current server:${RESET} $OLD_NAME"
+    echo -e "${BOLD}Version:${RESET} $SERVER_VERSION"
+    echo ""
+
+    read -rp "Enter new server name: " NEW_NAME
+
+    if [ -z "$NEW_NAME" ]; then
+        err "Server name cannot be empty."
+        sleep 1
         continue
     fi
 
-    chmod +x "$SERVER_DIR/bedrock_server"
-    cd "$SERVER_DIR"
+    if [[ "$NEW_NAME" == "." || "$NEW_NAME" == ".." || "$NEW_NAME" == */* ]]; then
+        err "Invalid server name."
+        sleep 1
+        continue
+    fi
+
+    if [ "$NEW_NAME" = "$OLD_NAME" ]; then
+        warn "New name is the same as the current name."
+        sleep 1
+        continue
+    fi
+
+    NEW_DIR="$SERVER_ROOT/$NEW_NAME"
+
+    if [ -e "$NEW_DIR" ]; then
+        err "A server named \"$NEW_NAME\" already exists."
+        sleep 1
+        continue
+    fi
 
     echo ""
-    ok "Server : $SERVER_NAME"
-    ok "Version: $SERVER_VERSION"
-    echo -e "  Press ${CYAN}Ctrl+C${RESET} to stop."
+    warn "Rename server:"
+    echo -e "  ${BOLD}$OLD_NAME${RESET} ${CYAN}→${RESET} ${BOLD}$NEW_NAME${RESET}"
+    echo -e "  ${BOLD}Version:${RESET} $SERVER_VERSION"
     echo ""
 
-    PAGESIZE="$(getconf PAGESIZE 2>/dev/null || echo 4096)"
-    info "Detected page size: ${PAGESIZE} bytes"
+    read -rp "Continue with rename? [y/N]: " confirm
 
-    _run_server() {
-        export LD_LIBRARY_PATH=".:/usr/lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-        export BOX64_LOG=0
-        export BOX64_MMAP32=1
-        export BOX64_NOSIGSEGV=1
-        export BOX64_PAGESIZE="$PAGESIZE"
-        export BOX64_DYNAREC_WAIT=1
-        export BOX64_DYNAREC_STRONGMEM=1
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        warn "Rename cancelled."
+        sleep 1
+        continue
+    fi
 
-        box64 bedrock_server 2>&1 | grep -v 'Box64 with Dynarec'
-    }
+    echo ""
+    info "Renaming server..."
 
-    USER_STOP=false
-    trap 'USER_STOP=true' SIGINT
-
-    while true; do
-        USER_STOP=false
-
-        info "Launching bedrock_server..."
-        _run_server || true
-        EXIT_CODE=${PIPESTATUS[0]:-$?}
-
-        if [ "$USER_STOP" = true ]; then
-            echo ""
-            warn "Server stopped by user."
-            break
-        fi
-
-        if [ "$EXIT_CODE" -eq 0 ]; then
-            echo ""
-            warn "Server stopped cleanly."
-            break
-        fi
-
+    if mv -- "$SERVER_DIR" "$NEW_DIR"; then
+        ok "Server renamed successfully."
         echo ""
-        err "Server crashed (exit code: $EXIT_CODE)."
-        echo -e "${CYAN}[*]${RESET} Restarting in 5 seconds... (Ctrl+C to abort)"
-        sleep 5
-    done
+        echo -e "  ${BOLD}Old name:${RESET} $OLD_NAME"
+        echo -e "  ${BOLD}New name:${RESET} $NEW_NAME"
+        echo -e "  ${BOLD}Version :${RESET} $SERVER_VERSION"
+    else
+        err "Failed to rename server."
+    fi
 
-    trap - SIGINT
-
-    echo ""
-    info "Returning to server list..."
-    sleep 1
+    sleep 2
 done

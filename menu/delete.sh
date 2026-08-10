@@ -11,96 +11,110 @@ RESET='\033[0m'
 info() { echo -e "${CYAN}[*]${RESET} $1"; }
 ok()   { echo -e "${GREEN}[✓]${RESET} $1"; }
 warn() { echo -e "${YELLOW}[!]${RESET} $1"; }
-err()  { echo -e "${RED}[✗]${RESET} $1"; exit 1; }
+err()  { echo -e "${RED}[✗]${RESET} $1"; }
 
+TITLE="Delete Server"
 SERVER_ROOT="$HOME/Bedrock Server/Data"
-SERVER_FOLDERS=()
+VERSION_FILE="version.txt"
 
-if [ "$(id -u)" -ne 0 ]; then
-    err "This script must be run inside Debian as root."
-fi
-
-if [ ! -d "$SERVER_ROOT" ]; then
-    err "Bedrock Server Data directory not found: $SERVER_ROOT"
-fi
-
-for folder in "$SERVER_ROOT"/*/; do
-    [ -d "$folder" ] && SERVER_FOLDERS+=("${folder%/}")
-done
-
-if [ ${#SERVER_FOLDERS[@]} -eq 0 ]; then
-    err "No server folders found in $SERVER_ROOT."
-fi
-
-echo -e "${BOLD}Available servers:${RESET}"
-echo ""
-
-INDEX=1
-
-for folder in "${SERVER_FOLDERS[@]}"; do
-    NAME="$(basename "$folder")"
-
-    VERSION_INFO=""
-
-    if [ -f "$folder/release-notes.txt" ]; then
-        VERSION_INFO="$(head -n1 "$folder/release-notes.txt" 2>/dev/null || true)"
-    fi
-
-    if [ -n "$VERSION_INFO" ]; then
-        echo -e "  ${CYAN}${INDEX})${RESET} $NAME  ($VERSION_INFO)"
-    else
-        echo -e "  ${CYAN}${INDEX})${RESET} $NAME"
-    fi
-
-    INDEX=$((INDEX + 1))
-done
-
-echo ""
-
-if [ ${#SERVER_FOLDERS[@]} -eq 1 ]; then
-    read -rp "Enter choice [1]: " FOLDER_CHOICE
-    FOLDER_CHOICE="${FOLDER_CHOICE:-1}"
-else
-    read -rp "Enter choice [1-${#SERVER_FOLDERS[@]}]: " FOLDER_CHOICE
-fi
-
-if ! [[ "$FOLDER_CHOICE" =~ ^[0-9]+$ ]] ||
-   [ "$FOLDER_CHOICE" -lt 1 ] ||
-   [ "$FOLDER_CHOICE" -gt ${#SERVER_FOLDERS[@]} ]; then
-    err "Invalid choice."
-fi
-
-SERVER_DIR="${SERVER_FOLDERS[$((FOLDER_CHOICE - 1))]}"
-SERVER_NAME="$(basename "$SERVER_DIR")"
-
-echo ""
-warn "You are about to permanently delete:"
-echo ""
-echo -e "  ${BOLD}$SERVER_NAME${RESET}"
-echo -e "  $SERVER_DIR"
-echo ""
-warn "This will delete the entire server folder, including its worlds."
-echo ""
-
-read -rp "Type 'DELETE' to confirm: " CONFIRM
-
-if [ "$CONFIRM" != "DELETE" ]; then
+show_title() {
+    clear
     echo ""
-    warn "Deletion cancelled."
-    exit 0
-fi
+    echo -e "${BOLD}${CYAN}========================================${RESET}"
+    echo -e "${BOLD}             ${TITLE}${RESET}"
+    echo -e "${BOLD}${CYAN}========================================${RESET}"
+    echo ""
+}
 
-echo ""
-info "Deleting server: $SERVER_NAME..."
+[ "$(id -u)" -eq 0 ] || { err "This script must be run inside Debian as root."; exit 1; }
+[ -d "$SERVER_ROOT" ] || { err "Bedrock Server Data directory not found: $SERVER_ROOT"; exit 1; }
 
-rm -rf -- "$SERVER_DIR"
+while true; do
+    SERVER_FOLDERS=()
 
-if [ -d "$SERVER_DIR" ]; then
-    err "Failed to delete server."
-fi
+    for folder in "$SERVER_ROOT"/*; do
+        [ -d "$folder" ] && SERVER_FOLDERS+=("$folder")
+    done
 
-ok "Server deleted: $SERVER_NAME"
+    show_title
 
-echo ""
-echo -e "${GREEN}${BOLD}✓ Delete complete!${RESET}"
-echo ""
+    if [ ${#SERVER_FOLDERS[@]} -eq 0 ]; then
+        warn "No server folders found."
+        exit 0
+    fi
+
+    echo -e "${BOLD}Available servers:${RESET}"
+    echo ""
+
+    for i in "${!SERVER_FOLDERS[@]}"; do
+        folder="${SERVER_FOLDERS[$i]}"
+        name="$(basename "$folder")"
+        version=""
+
+        [ -f "$folder/$VERSION_FILE" ] &&
+            version="$(head -n1 "$folder/$VERSION_FILE" 2>/dev/null || true)"
+
+        if [ -n "$version" ]; then
+            echo -e "  ${CYAN}$((i + 1)))${RESET} $name ${GREEN}(v$version)${RESET}"
+        else
+            echo -e "  ${CYAN}$((i + 1)))${RESET} $name ${YELLOW}(version unknown)${RESET}"
+        fi
+    done
+
+    echo -e "  ${CYAN}0)${RESET} Back"
+    echo ""
+
+    read -rp "Enter choice [0-${#SERVER_FOLDERS[@]}]: " choice
+
+    if [ "$choice" = "0" ]; then
+        info "Back to manage menu..."
+        exit 0
+    fi
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] ||
+       [ "$choice" -lt 1 ] ||
+       [ "$choice" -gt "${#SERVER_FOLDERS[@]}" ]; then
+        err "Invalid choice."
+        sleep 1
+        continue
+    fi
+
+    SERVER_DIR="${SERVER_FOLDERS[$((choice - 1))]}"
+    SERVER_NAME="$(basename "$SERVER_DIR")"
+    SERVER_VERSION="Unknown"
+
+    if [ -f "$SERVER_DIR/$VERSION_FILE" ]; then
+        VERSION="$(head -n1 "$SERVER_DIR/$VERSION_FILE" 2>/dev/null || true)"
+        [ -n "$VERSION" ] && SERVER_VERSION="$VERSION"
+    fi
+
+    echo ""
+    warn "Permanently delete:"
+    echo -e "  ${BOLD}Server :${RESET} $SERVER_NAME"
+    echo -e "  ${BOLD}Version:${RESET} $SERVER_VERSION"
+    echo -e "  ${BOLD}Path   :${RESET} $SERVER_DIR"
+    echo ""
+    warn "All worlds and server data will be deleted."
+    echo ""
+
+    read -rp "Type 'DELETE' to confirm: " confirm
+
+    if [ "$confirm" != "DELETE" ]; then
+        warn "Deletion cancelled."
+        sleep 1
+        continue
+    fi
+
+    echo ""
+    info "Deleting server: $SERVER_NAME..."
+
+    rm -rf -- "$SERVER_DIR"
+
+    if [ -d "$SERVER_DIR" ]; then
+        err "Failed to delete server."
+    else
+        ok "Server deleted: $SERVER_NAME"
+    fi
+
+    sleep 2
+done
