@@ -8,10 +8,10 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-info()  { echo -e "${CYAN}[*]${RESET} $1"; }
-ok()    { echo -e "${GREEN}[✓]${RESET} $1"; }
-warn()  { echo -e "${YELLOW}[!]${RESET} $1"; }
-err()   { echo -e "${RED}[✗]${RESET} $1"; exit 1; }
+info() { echo -e "${CYAN}[*]${RESET} $1"; }
+ok()   { echo -e "${GREEN}[✓]${RESET} $1"; }
+warn() { echo -e "${YELLOW}[!]${RESET} $1"; }
+err()  { echo -e "${RED}[✗]${RESET} $1"; exit 1; }
 
 API_URL="https://net-secondary.web.minecraft-services.net/api/v1.0/download/links"
 REPO="https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main"
@@ -28,6 +28,7 @@ ok "Debian environment detected."
 
 # Update package lists
 info "Updating package lists..."
+
 apt update -y ||
     err "Failed to update package lists."
 
@@ -56,16 +57,17 @@ fi
 
 # Update dependencies
 info "Updating installed dependencies..."
+
 apt install --only-upgrade -y $PACKAGES ||
     err "Failed to update dependencies."
 
 mkdir -p "$SERVER_ROOT"
 
-# Find servers
+# Find all server folders
 SERVER_FOLDERS=()
 
-for folder in "$SERVER_ROOT"/server*; do
-    [ -d "$folder" ] && SERVER_FOLDERS+=("$folder")
+for folder in "$SERVER_ROOT"/*/; do
+    [ -d "$folder" ] && SERVER_FOLDERS+=("${folder%/}")
 done
 
 if [ ${#SERVER_FOLDERS[@]} -eq 0 ]; then
@@ -154,20 +156,25 @@ done
 echo -e "  ${CYAN}N)${RESET} Create a new folder"
 echo ""
 
-read -rp "Enter choice: " FOLDER_CHOICE
-
-if [[ "$FOLDER_CHOICE" =~ ^[Nn]$ ]]; then
-    read -rp "Enter new folder name [${DEFAULT_DIR}]: " NEW_FOLDER
+if [ ${#SERVER_FOLDERS[@]} -eq 0 ]; then
+    read -rp "Enter folder name [${DEFAULT_DIR}]: " NEW_FOLDER
     SERVER_DIR="$SERVER_ROOT/${NEW_FOLDER:-$DEFAULT_DIR}"
-
-elif [[ "$FOLDER_CHOICE" =~ ^[0-9]+$ ]] &&
-      [ "$FOLDER_CHOICE" -ge 1 ] &&
-      [ "$FOLDER_CHOICE" -le ${#SERVER_FOLDERS[@]} ]; then
-
-    SERVER_DIR="${SERVER_FOLDERS[$((FOLDER_CHOICE - 1))]}"
-
 else
-    SERVER_DIR="$SERVER_ROOT/$DEFAULT_DIR"
+    read -rp "Enter choice: " FOLDER_CHOICE
+
+    if [[ "$FOLDER_CHOICE" =~ ^[Nn]$ ]]; then
+        read -rp "Enter new folder name [${DEFAULT_DIR}]: " NEW_FOLDER
+        SERVER_DIR="$SERVER_ROOT/${NEW_FOLDER:-$DEFAULT_DIR}"
+
+    elif [[ "$FOLDER_CHOICE" =~ ^[0-9]+$ ]] &&
+         [ "$FOLDER_CHOICE" -ge 1 ] &&
+         [ "$FOLDER_CHOICE" -le ${#SERVER_FOLDERS[@]} ]; then
+
+        SERVER_DIR="${SERVER_FOLDERS[$((FOLDER_CHOICE - 1))]}"
+
+    else
+        err "Invalid folder choice."
+    fi
 fi
 
 echo ""
@@ -212,6 +219,7 @@ unzip -o "$SERVER_ZIP" ||
 
 rm -f "$SERVER_ZIP"
 
+# Check server binary
 if [ -f "bedrock_server" ]; then
     chmod +x bedrock_server
     ok "bedrock_server marked executable."
@@ -219,32 +227,25 @@ else
     err "bedrock_server not found after extraction."
 fi
 
-# Update helper scripts
+# Update run.sh
 cd "$SERVER_ROOT"
 
-info "Updating run script..."
-wget -q "$REPO/run" -O run ||
-    err "Failed to update run."
-chmod +x run
+info "Updating run.sh..."
 
-info "Updating addon installer..."
-wget -q "$REPO/install_addon.sh" -O install_addon.sh ||
-    err "Failed to update install_addon.sh."
-chmod +x install_addon.sh
+wget -q "$REPO/run.sh" -O run.sh ||
+    err "Failed to update run.sh."
 
-info "Updating autostart script..."
-wget -q "$REPO/autostart.sh" -O autostart.sh ||
-    err "Failed to update autostart.sh."
-chmod +x autostart.sh
+chmod +x run.sh
 
 echo ""
-echo -e "${GREEN}${BOLD}✓ Update complete!${RESET}"
+echo -e "${GREEN}${BOLD}✓ Install/update complete!${RESET}"
 echo ""
 echo -e "  ${BOLD}Version:${RESET} $VERSION_LABEL"
 echo -e "  ${BOLD}Folder :${RESET} $SERVER_DIR"
 echo -e "  ${BOLD}Worlds :${RESET} Backed up (if present)"
 echo ""
-echo -e "  ${BOLD}Start server:${RESET} ${CYAN}cd \"\$HOME/Bedrock Server\" && ./run${RESET}"
+echo -e "  ${BOLD}Start server:${RESET}"
+echo -e "  ${CYAN}cd \"\$HOME/Bedrock Server\" && ./run.sh${RESET}"
 echo ""
 
 if [ "$VERSION_CHOICE" = "2" ]; then
@@ -253,5 +254,5 @@ fi
 
 if [ "$VERSION_CHOICE" = "3" ]; then
     warn "If the server crashes immediately, this version may be incompatible with your device."
-    warn "Run ./update.sh again and choose option 1 to revert to latest stable."
+    warn "Run ./install_update.sh again and choose option 1 to revert to latest stable."
 fi
