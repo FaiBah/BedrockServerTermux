@@ -9,7 +9,7 @@ ok(){ echo -e "${GREEN}[✓]${RESET} $1"; }
 err(){ echo -e "${RED}[✗]${RESET} $1"; exit 1; }
 
 REPO="https://github.com/FaiBah/BedrockServerTermux"
-SERVER_ROOT="$HOME/Bedrock Server"
+SERVER_ROOT="$HOME/BedrockServerTermux"
 SERVER_DATA="$SERVER_ROOT/Servers"
 BACKUP_ROOT="$SERVER_ROOT/Backups"
 PACKAGES="git box64 jq unzip tar curl wget gpg rsync"
