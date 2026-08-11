@@ -65,6 +65,7 @@ while true; do
 
     case "$choice" in
         0)
+            info "Back to manage menu..."
             exit 0
             ;;
 

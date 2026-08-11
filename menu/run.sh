@@ -74,6 +74,7 @@ while true; do
     read -rp "Select an option [0-${#SERVERS[@]}]: " choice
 
     if [ "$choice" = "0" ]; then
+        info "Back to manage menu..."
         exit 0
     fi
 
