@@ -27,8 +27,8 @@ pkg install proot-distro -y ||
 ok "proot-distro ready."
 
 # Install Debian if needed
-if proot-distro list 2>/dev/null |
-    grep -qE '^\s*debian\s+\S+\s+installed'; then
+if proot-distro list-installed 2>/dev/null |
+    grep -qE '^\s*debian\s*$'; then
     ok "Debian is already installed."
 else
     info "Installing Debian..."
