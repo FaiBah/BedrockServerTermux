@@ -7,16 +7,15 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-info() { echo -e "${CYAN}[*]${RESET} $1"; }
-ok()   { echo -e "${GREEN}[✓]${RESET} $1"; }
-warn() { echo -e "${YELLOW}[!]${RESET} $1"; }
-err()  { echo -e "${RED}[✗]${RESET} $1"; exit 1; }
+info(){ echo -e "${CYAN}[*]${RESET} $1"; }
+ok(){ echo -e "${GREEN}[✓]${RESET} $1"; }
+warn(){ echo -e "${YELLOW}[!]${RESET} $1"; }
+err(){ echo -e "${RED}[✗]${RESET} $1"; exit 1; }
 
 # Check Termux
-if [ "$PREFIX" != "/data/data/com.termux/files/usr" ] ||
-   [ ! -d "/data/data/com.termux" ]; then
+[ "$PREFIX" = "/data/data/com.termux/files/usr" ] &&
+[ -d "/data/data/com.termux" ] ||
     err "This script must be run inside Termux."
-fi
 
 ok "Termux detected."
 
@@ -34,7 +33,6 @@ if proot-distro login debian -- true >/dev/null 2>&1; then
     ok "Debian is already installed."
 else
     info "Installing Debian..."
-
     proot-distro install debian ||
         err "Debian installation failed."
 fi
