@@ -60,8 +60,10 @@ fi
 
 # ── Update dependencies ────────────────────────────────────
 info "Updating installed dependencies..."
+
 apt install --only-upgrade -y $PACKAGES ||
     err "Failed to update dependencies."
+
 ok "Dependencies updated."
 
 # ── Create server directories ───────────────────────────────
