@@ -143,17 +143,19 @@ while true; do
                 LABEL="Server Configuration"
                 FILES=()
 
-                for file in \
-                    server.properties \
-                    permissions.json \
+                for item in \
+                    config \
                     allowlist.json \
-                    valid_known_packs.json
+                    permissions.json \
+                    server.properties
                 do
-                    [ -f "$SERVER_DIR/$file" ] && FILES+=("$file")
+                    if [ -e "$SERVER_DIR/$item" ]; then
+                        FILES+=("$item")
+                    fi
                 done
 
                 if [ "${#FILES[@]}" -eq 0 ]; then
-                    warn "No server configuration files found."
+                    warn "No server configuration files or folders found."
                     pause
                     continue
                 fi
