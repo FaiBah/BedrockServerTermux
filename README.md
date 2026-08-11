@@ -70,7 +70,7 @@ This presents the following menu:
 ## File structure
 
 ```
-Bedrock Server/
+BedrockServerTermux/
 ├── manage.sh
 ├── menu/
 │   ├── [*].sh
