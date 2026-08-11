@@ -1,4 +1,4 @@
-# 🧱 BedrockServerTermux
+# BedrockServerTermux
 
 > Run a **Minecraft Bedrock Dedicated Server** on Android via **Termux** — inside a Debian proot, powered by **box64** to run the x86_64 server binary on ARM.
 
