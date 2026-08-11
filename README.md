@@ -63,27 +63,9 @@ This presents the following menu:
 3) Backup server
 4) Rename server
 5) Delete server
+6) Update manager
 0) Exit
 ```
-
-### Initial setup
-
-1. From the menu, select **2) Install / Update server**
-2. Select a version (Latest Stable, Latest Preview/Beta, or a specific version number)
-3. Select or create a target folder
-4. Wait for the download and extraction to complete
-5. From the menu, select **1) Run server** and choose the installed server
-
-### Backups
-
-**3) Backup server** supports three backup types:
-- Full server
-- World data only
-- Server configuration only (`server.properties`, `permissions.json`, `allowlist.json`, `valid_known_packs.json`)
-
-Backups are saved to `~/Bedrock Server/Backups/<server_name>/` as `.tar.gz` archives.
-
-Installing or updating a server automatically backs up the existing `worlds/` directory before files are overwritten.
 
 ## File structure
 
@@ -91,12 +73,8 @@ Installing or updating a server automatically backs up the existing `worlds/` di
 Bedrock Server/
 ├── manage.sh
 ├── menu/
-│   ├── install.sh
-│   ├── run.sh
-│   ├── backup.sh
-│   ├── rename.sh
-│   └── delete.sh
-├── Data/
+│   ├── [*].sh
+├── Servers/
 │   └── <server_name>/
 │       ├── bedrock_server
 │       ├── version.txt
@@ -110,7 +88,7 @@ Bedrock Server/
 ## Notes
 
 - All commands (`bds`, install, run, etc.) must be executed as root within the Debian proot.
-- Multiple servers may be installed concurrently in separate folders under `Data/`.
+- Multiple servers may be installed concurrently in separate folders under `Servers/`.
 - To stop a running server, press `Ctrl+C`. Unexpected crashes trigger an automatic restart after five seconds.
 
 ## License
