@@ -26,6 +26,13 @@ EXCLUDE_PATHS=(
     "server.properties"
 )
 
+BACKUP_PATHS=(
+    "config"
+    "allowlist.json"
+    "permissions.json"
+    "server.properties"
+)
+
 title(){
     clear
     echo ""
@@ -295,7 +302,7 @@ while true; do
 
     BACKUP_ITEMS=()
 
-    for item in "${EXCLUDE_PATHS[@]}"; do
+    for item in "${BACKUP_PATHS[@]}"; do
         [ -e "$SERVER_DIR/$item" ] &&
             BACKUP_ITEMS+=("$item")
     done
