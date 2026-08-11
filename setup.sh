@@ -1,43 +1,37 @@
 #!/bin/bash
 set -euo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-RESET='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
 
 info(){ echo -e "${CYAN}[*]${RESET} $1"; }
 ok(){ echo -e "${GREEN}[✓]${RESET} $1"; }
-warn(){ echo -e "${YELLOW}[!]${RESET} $1"; }
 err(){ echo -e "${RED}[✗]${RESET} $1"; exit 1; }
 
 REPO="https://github.com/FaiBah/BedrockServerTermux"
-
 SERVER_ROOT="$HOME/Bedrock Server"
 SERVER_DATA="$SERVER_ROOT/Servers"
 BACKUP_ROOT="$SERVER_ROOT/Backups"
+PACKAGES="git box64 jq unzip tar curl wget gpg rsync"
 
-PACKAGES="git box64 sudo jq unzip tar curl wget gpg rsync"
-
-# ── Check Debian ───────────────────────────────────────────
-[ -f "/etc/debian_version" ] &&
-command -v apt >/dev/null 2>&1 &&
-command -v dpkg >/dev/null 2>&1 ||
+# Check Debian
+if [ ! -f "/etc/debian_version" ] ||
+   ! command -v apt >/dev/null 2>&1 ||
+   ! command -v dpkg >/dev/null 2>&1; then
     err "This script must be run inside Debian."
+fi
 
 [ "$(id -u)" -eq 0 ] ||
     err "This script must be run as root inside Debian."
 
 ok "Debian environment detected."
 
-# ── Update package lists ───────────────────────────────────
+# Update package lists
 info "Updating package lists..."
 apt update -y || err "Failed to update package lists."
 ok "Package lists updated."
 
-# ── Check dependencies ─────────────────────────────────────
+# Install missing dependencies
 info "Checking dependencies..."
 
 MISSING=""
@@ -52,32 +46,24 @@ done
 
 if [ -n "$MISSING" ]; then
     info "Installing missing packages:$MISSING"
-    apt install -y $MISSING || err "Failed to install dependencies."
-    ok "Missing dependencies installed."
+    apt install -y $MISSING ||
+        err "Failed to install dependencies."
+    ok "Dependencies installed."
 else
     ok "All required packages are installed."
 fi
 
-# ── Update dependencies ────────────────────────────────────
-info "Updating installed dependencies..."
-
-apt install --only-upgrade -y $PACKAGES ||
-    err "Failed to update dependencies."
-
-ok "Dependencies updated."
-
-# ── Create server directories ───────────────────────────────
+# Create directories
 for dir in "$SERVER_ROOT" "$SERVER_DATA" "$BACKUP_ROOT"; do
     if [ -d "$dir" ]; then
         ok "$(basename "$dir") directory already exists."
     else
-        info "Creating $(basename "$dir") directory..."
         mkdir -p "$dir"
         ok "$(basename "$dir") directory created."
     fi
 done
 
-# ── Download manager files ─────────────────────────────────
+# Download repository
 info "Downloading manager files..."
 
 TMP_DIR="$(mktemp -d)"
@@ -86,8 +72,6 @@ ZIP_FILE="$TMP_DIR/repo.zip"
 cleanup(){ rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
-info "Downloading repository..."
-
 curl -fsSL \
     "$REPO/archive/refs/heads/main.zip" \
     -o "$ZIP_FILE" ||
@@ -95,8 +79,7 @@ curl -fsSL \
 
 ok "Repository downloaded."
 
-info "Extracting manager files..."
-
+# Extract repository
 unzip -q "$ZIP_FILE" -d "$TMP_DIR" ||
     err "Failed to extract repository."
 
@@ -108,7 +91,7 @@ REPO_DIR="$TMP_DIR/BedrockServerTermux-main"
 [ -d "$REPO_DIR/menu" ] ||
     err "menu directory not found in repository."
 
-# ── Install manage.sh ──────────────────────────────────────
+# Install manager
 info "Installing manage.sh..."
 
 cp -f "$REPO_DIR/manage.sh" "$SERVER_ROOT/manage.sh"
@@ -116,7 +99,7 @@ chmod +x "$SERVER_ROOT/manage.sh"
 
 ok "manage.sh installed."
 
-# ── Install entire menu directory ──────────────────────────
+# Install menu
 info "Installing menu..."
 
 rm -rf "$SERVER_ROOT/menu"
@@ -125,10 +108,8 @@ chmod +x "$SERVER_ROOT"/menu/*.sh
 
 ok "Menu installed."
 
-# ── Create bds command ─────────────────────────────────────
+# Create bds command
 BDS_BIN="/usr/local/bin/bds"
-
-info "Creating 'bds' command..."
 
 cat > "$BDS_BIN" <<EOF
 #!/bin/bash
