@@ -42,6 +42,7 @@ while true; do
     echo -e "  ${CYAN}3)${RESET} Backup server"
     echo -e "  ${CYAN}4)${RESET} Rename server"
     echo -e "  ${CYAN}5)${RESET} Delete server"
+    echo -e "  ${CYAN}6)${RESET} Update manager"
     echo -e "  ${CYAN}0)${RESET} Exit"
     echo ""
 
@@ -53,6 +54,7 @@ while true; do
         3) bash "$MENU_DIR/backup.sh" ;;
         4) bash "$MENU_DIR/rename.sh" ;;
         5) bash "$MENU_DIR/delete.sh" ;;
+        6) bash "$MENU_DIR/update.sh" ;;
         0)
             info "Goodbye."
             exit 0
