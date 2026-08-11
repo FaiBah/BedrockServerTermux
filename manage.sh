@@ -46,7 +46,7 @@ while true; do
     echo -e "  ${CYAN}0)${RESET} Exit"
     echo ""
 
-    read -rp "Enter choice [0-5]: " choice
+    read -rp "Enter choice [0-6]: " choice
 
     case "$choice" in
         1) bash "$MENU_DIR/run.sh" ;;
