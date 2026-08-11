@@ -6,8 +6,8 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-info() { echo -e "${CYAN}[*]${RESET} $1"; }
-err()  { echo -e "${RED}[✗]${RESET} $1"; }
+info(){ echo -e "${CYAN}[*]${RESET} $1"; }
+err(){ echo -e "${RED}[✗]${RESET} $1"; }
 
 TITLE="Bedrock Server Manager"
 SHOW_TITLE=true
@@ -16,23 +16,24 @@ CLEAR_SCREEN=true
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MENU_DIR="$SCRIPT_DIR/menu"
 
-show_title() {
-    [ "$CLEAR_SCREEN" = true ] && clear
+# Show manager title
+show_title(){
+    $CLEAR_SCREEN && clear
 
-    if [ "$SHOW_TITLE" = true ]; then
-        echo ""
-        echo -e "${BOLD}${CYAN}========================================${RESET}"
-        echo -e "${BOLD}        ${TITLE}${RESET}"
-        echo -e "${BOLD}${CYAN}========================================${RESET}"
-        echo ""
-    fi
+    $SHOW_TITLE || return
+
+    echo ""
+    echo -e "${BOLD}${CYAN}========================================${RESET}"
+    echo -e "${BOLD}        $TITLE${RESET}"
+    echo -e "${BOLD}${CYAN}========================================${RESET}"
+    echo ""
 }
 
-if [ "$(id -u)" -ne 0 ]; then
-    err "This script must be run inside Debian as root."
-    exit 1
-fi
+# Check root
+[ "$(id -u)" -eq 0 ] ||
+    { err "This script must be run inside Debian as root."; exit 1; }
 
+# Main menu
 while true; do
     show_title
 
@@ -47,21 +48,11 @@ while true; do
     read -rp "Enter choice [0-5]: " choice
 
     case "$choice" in
-        1)
-            bash "$MENU_DIR/run.sh"
-            ;;
-        2)
-            bash "$MENU_DIR/install.sh"
-            ;;
-        3)
-            bash "$MENU_DIR/backup.sh"
-            ;;
-        4)
-            bash "$MENU_DIR/rename.sh"
-            ;;
-        5)
-            bash "$MENU_DIR/delete.sh"
-            ;;
+        1) bash "$MENU_DIR/run.sh" ;;
+        2) bash "$MENU_DIR/install.sh" ;;
+        3) bash "$MENU_DIR/backup.sh" ;;
+        4) bash "$MENU_DIR/rename.sh" ;;
+        5) bash "$MENU_DIR/delete.sh" ;;
         0)
             info "Goodbye."
             exit 0
