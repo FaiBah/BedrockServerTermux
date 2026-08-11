@@ -8,10 +8,10 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-info() { echo -e "${CYAN}[*]${RESET} $1"; }
-ok()   { echo -e "${GREEN}[✓]${RESET} $1"; }
-warn() { echo -e "${YELLOW}[!]${RESET} $1"; }
-err()  { echo -e "${RED}[✗]${RESET} $1"; }
+info(){ echo -e "${CYAN}[*]${RESET} $1"; }
+ok(){ echo -e "${GREEN}[✓]${RESET} $1"; }
+warn(){ echo -e "${YELLOW}[!]${RESET} $1"; }
+err(){ echo -e "${RED}[✗]${RESET} $1"; }
 
 TITLE="Install / Update Server"
 SHOW_TITLE=true
@@ -19,10 +19,14 @@ CLEAR_SCREEN=true
 
 API_URL="https://net-secondary.web.minecraft-services.net/api/v1.0/download/links"
 SERVER_ZIP="bedrock_server_latest.zip"
-SERVER_ROOT="$HOME/Bedrock Server/Data"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVER_ROOT="$(dirname "$SCRIPT_DIR")/Servers"
+BACKUP_ROOT="$(dirname "$SCRIPT_DIR")/Backups"
+
 VERSION_FILE_NAME="version.txt"
 
-show_title() {
+show_title(){
     [ "$CLEAR_SCREEN" = true ] && clear
 
     if [ "$SHOW_TITLE" = true ]; then
@@ -34,32 +38,20 @@ show_title() {
     fi
 }
 
-if [ "$(id -u)" -ne 0 ]; then
+# ── Check environment ───────────────────────────────────────
+[ "$(id -u)" -eq 0 ] ||
     err "This script must be run inside Debian as root."
-    exit 1
-fi
 
-if [ ! -d "$SERVER_ROOT" ]; then
-    err "Bedrock Server Data directory not found: $SERVER_ROOT"
-    exit 1
-fi
+[ -d "$SERVER_ROOT" ] ||
+    err "Bedrock Server Servers directory not found: $SERVER_ROOT"
 
-if ! command -v curl >/dev/null 2>&1; then
-    err "curl is not installed."
-fi
+# ── Check dependencies ──────────────────────────────────────
+for cmd in curl jq wget unzip tar; do
+    command -v "$cmd" >/dev/null 2>&1 ||
+        err "$cmd is not installed."
+done
 
-if ! command -v jq >/dev/null 2>&1; then
-    err "jq is not installed."
-fi
-
-if ! command -v wget >/dev/null 2>&1; then
-    err "wget is not installed."
-fi
-
-if ! command -v unzip >/dev/null 2>&1; then
-    err "unzip is not installed."
-fi
-
+# ── Version and server selection ────────────────────────────
 while true; do
 
     SERVER_FOLDERS=()
@@ -70,10 +62,7 @@ while true; do
 
     show_title
 
-    # --------------------------------------------------------
-    # Select version
-    # --------------------------------------------------------
-
+    # ── Select version ──────────────────────────────────────
     echo -e "${BOLD}Select version to install:${RESET}"
     echo -e "  ${CYAN}1)${RESET} Latest Stable       ${GREEN}(Recommended)${RESET}"
     echo -e "  ${CYAN}2)${RESET} Latest Preview/Beta"
@@ -84,7 +73,6 @@ while true; do
     read -rp "Enter choice [0-3]: " VERSION_CHOICE
 
     case "$VERSION_CHOICE" in
-
         0)
             info "Back to manage menu..."
             exit 0
@@ -162,22 +150,15 @@ while true; do
             ;;
     esac
 
-
-    # --------------------------------------------------------
-    # Select target folder
-    # --------------------------------------------------------
-
+    # ── Select target folder ─────────────────────────────────
     echo ""
     echo -e "${BOLD}Select target folder:${RESET}"
 
-    if [ ${#SERVER_FOLDERS[@]} -gt 0 ]; then
-
+    if [ "${#SERVER_FOLDERS[@]}" -gt 0 ]; then
         INDEX=1
 
         for folder in "${SERVER_FOLDERS[@]}"; do
-
             NAME="$(basename "$folder")"
-
             VERSION_INFO=""
 
             if [ -f "$folder/$VERSION_FILE_NAME" ]; then
@@ -185,25 +166,20 @@ while true; do
             fi
 
             if [ "$NAME" = "$DEFAULT_DIR" ]; then
-
                 if [ -n "$VERSION_INFO" ]; then
                     echo -e "  ${CYAN}${INDEX})${RESET} $NAME ${GREEN}(v$VERSION_INFO, recommended)${RESET}"
                 else
                     echo -e "  ${CYAN}${INDEX})${RESET} $NAME ${GREEN}(recommended)${RESET}"
                 fi
-
             else
-
                 if [ -n "$VERSION_INFO" ]; then
                     echo -e "  ${CYAN}${INDEX})${RESET} $NAME ${GREEN}(v$VERSION_INFO)${RESET}"
                 else
                     echo -e "  ${CYAN}${INDEX})${RESET} $NAME"
                 fi
-
             fi
 
             INDEX=$((INDEX + 1))
-
         done
     fi
 
@@ -211,33 +187,24 @@ while true; do
     echo -e "  ${CYAN}0)${RESET} Back"
     echo ""
 
-    if [ ${#SERVER_FOLDERS[@]} -eq 0 ]; then
-
+    if [ "${#SERVER_FOLDERS[@]}" -eq 0 ]; then
         read -rp "Enter folder name [${DEFAULT_DIR}]: " NEW_FOLDER
 
-        if [ -z "$NEW_FOLDER" ]; then
-            NEW_FOLDER="$DEFAULT_DIR"
-        fi
+        [ -n "$NEW_FOLDER" ] || NEW_FOLDER="$DEFAULT_DIR"
 
         SERVER_DIR="$SERVER_ROOT/$NEW_FOLDER"
-
     else
-
         read -rp "Enter choice: " FOLDER_CHOICE
 
         if [ "$FOLDER_CHOICE" = "0" ]; then
-
             info "Back to version selection..."
             sleep 1
             continue
 
         elif [[ "$FOLDER_CHOICE" =~ ^[Nn]$ ]]; then
-
             read -rp "Enter new folder name [${DEFAULT_DIR}]: " NEW_FOLDER
 
-            if [ -z "$NEW_FOLDER" ]; then
-                NEW_FOLDER="$DEFAULT_DIR"
-            fi
+            [ -n "$NEW_FOLDER" ] || NEW_FOLDER="$DEFAULT_DIR"
 
             SERVER_DIR="$SERVER_ROOT/$NEW_FOLDER"
 
@@ -248,21 +215,15 @@ while true; do
             SERVER_DIR="${SERVER_FOLDERS[$((FOLDER_CHOICE - 1))]}"
 
         else
-
             err "Invalid folder choice."
             sleep 1
             continue
-
         fi
     fi
 
     SERVER_NAME="$(basename "$SERVER_DIR")"
 
-
-    # --------------------------------------------------------
-    # Show selection
-    # --------------------------------------------------------
-
+    # ── Show selection ──────────────────────────────────────
     echo ""
     ok "Version : $VERSION_LABEL"
     ok "Folder  : $SERVER_DIR"
@@ -271,13 +232,8 @@ while true; do
     mkdir -p "$SERVER_DIR"
     cd "$SERVER_DIR"
 
-
-    # --------------------------------------------------------
-    # Backup worlds before update
-    # --------------------------------------------------------
-
+    # ── Backup worlds before update ─────────────────────────
     if [ -d "worlds" ]; then
-
         TS="$(date +%Y%m%d_%H%M%S)"
         BACKUP_FILE="worlds_backup_${TS}.tar.gz"
 
@@ -290,18 +246,11 @@ while true; do
         fi
 
         ok "Backup saved: $BACKUP_FILE"
-
     else
-
         warn "No 'worlds' directory found - skipping backup."
-
     fi
 
-
-    # --------------------------------------------------------
-    # Download
-    # --------------------------------------------------------
-
+    # ── Download ─────────────────────────────────────────────
     echo ""
     info "Downloading $VERSION_LABEL..."
 
@@ -313,11 +262,7 @@ while true; do
         continue
     fi
 
-
-    # --------------------------------------------------------
-    # Extract
-    # --------------------------------------------------------
-
+    # ── Extract ──────────────────────────────────────────────
     echo ""
     info "Extracting server files..."
 
@@ -329,72 +274,42 @@ while true; do
 
     rm -f "$SERVER_ZIP"
 
-
-    # --------------------------------------------------------
-    # Check server
-    # --------------------------------------------------------
-
+    # ── Check server ─────────────────────────────────────────
     if [ -f "bedrock_server" ]; then
-
         chmod +x bedrock_server
         ok "bedrock_server marked executable."
-
     else
-
         err "bedrock_server not found after extraction."
         sleep 1
         continue
-
     fi
 
-
-    # --------------------------------------------------------
-    # Store installed version
-    # --------------------------------------------------------
-
+    # ── Store installed version ─────────────────────────────
     if [ "$VERSION_CHOICE" = "1" ] || [ "$VERSION_CHOICE" = "2" ]; then
-
         INSTALLED_VERSION=""
 
         if [[ "$DOWNLOAD_URL" =~ bedrock-server-([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\.zip ]]; then
             INSTALLED_VERSION="${BASH_REMATCH[1]}"
         fi
 
-        if [ -z "$INSTALLED_VERSION" ]; then
-
-            if [[ "$DOWNLOAD_URL" =~ ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) ]]; then
-                INSTALLED_VERSION="${BASH_REMATCH[1]}"
-            fi
-
+        if [ -z "$INSTALLED_VERSION" ] &&
+           [[ "$DOWNLOAD_URL" =~ ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            INSTALLED_VERSION="${BASH_REMATCH[1]}"
         fi
 
         if [ -n "$INSTALLED_VERSION" ]; then
-
             printf '%s\n' "$INSTALLED_VERSION" > "$VERSION_FILE_NAME"
-
             ok "Installed version: $INSTALLED_VERSION"
-
         else
-
             printf '%s\n' "$VERSION_LABEL" > "$VERSION_FILE_NAME"
-
             ok "Version saved: $VERSION_LABEL"
-
         fi
-
     else
-
         printf '%s\n' "$CUSTOM_VERSION" > "$VERSION_FILE_NAME"
-
         ok "Installed version: $CUSTOM_VERSION"
-
     fi
 
-
-    # --------------------------------------------------------
-    # Complete
-    # --------------------------------------------------------
-
+    # ── Complete ─────────────────────────────────────────────
     echo ""
     echo -e "${GREEN}${BOLD}✓ Install/update complete!${RESET}"
     echo ""
@@ -413,5 +328,4 @@ while true; do
     echo ""
     info "Returning to server selection..."
     sleep 2
-
 done

@@ -8,27 +8,34 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-info() { echo -e "${CYAN}[*]${RESET} $1"; }
-ok()   { echo -e "${GREEN}[✓]${RESET} $1"; }
-warn() { echo -e "${YELLOW}[!]${RESET} $1"; }
-err()  { echo -e "${RED}[✗]${RESET} $1"; }
+info(){ echo -e "${CYAN}[*]${RESET} $1"; }
+ok(){ echo -e "${GREEN}[✓]${RESET} $1"; }
+warn(){ echo -e "${YELLOW}[!]${RESET} $1"; }
+err(){ echo -e "${RED}[✗]${RESET} $1"; }
 
 TITLE="Delete Server"
-SERVER_ROOT="$HOME/Bedrock Server/Data"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVER_ROOT="$(dirname "$SCRIPT_DIR")/Servers"
 VERSION_FILE="version.txt"
 
-show_title() {
+# ── Show title ──────────────────────────────────────────────
+show_title(){
     clear
     echo ""
     echo -e "${BOLD}${CYAN}========================================${RESET}"
-    echo -e "${BOLD}             ${TITLE}${RESET}"
+    echo -e "${BOLD}             $TITLE${RESET}"
     echo -e "${BOLD}${CYAN}========================================${RESET}"
     echo ""
 }
 
-[ "$(id -u)" -eq 0 ] || { err "This script must be run inside Debian as root."; exit 1; }
-[ -d "$SERVER_ROOT" ] || { err "Bedrock Server Data directory not found: $SERVER_ROOT"; exit 1; }
+# ── Check environment ───────────────────────────────────────
+[ "$(id -u)" -eq 0 ] ||
+    { err "This script must be run inside Debian as root."; exit 1; }
 
+[ -d "$SERVER_ROOT" ] ||
+    { err "Bedrock Server Servers directory not found: $SERVER_ROOT"; exit 1; }
+
+# ── Server selection ────────────────────────────────────────
 while true; do
     SERVER_FOLDERS=()
 
@@ -38,7 +45,7 @@ while true; do
 
     show_title
 
-    if [ ${#SERVER_FOLDERS[@]} -eq 0 ]; then
+    if [ "${#SERVER_FOLDERS[@]}" -eq 0 ]; then
         warn "No server folders found."
         exit 0
     fi
@@ -66,6 +73,7 @@ while true; do
 
     read -rp "Enter choice [0-${#SERVER_FOLDERS[@]}]: " choice
 
+    # ── Handle menu choice ──────────────────────────────────
     if [ "$choice" = "0" ]; then
         info "Back to manage menu..."
         exit 0
@@ -83,11 +91,13 @@ while true; do
     SERVER_NAME="$(basename "$SERVER_DIR")"
     SERVER_VERSION="Unknown"
 
+    # ── Read server version ─────────────────────────────────
     if [ -f "$SERVER_DIR/$VERSION_FILE" ]; then
         VERSION="$(head -n1 "$SERVER_DIR/$VERSION_FILE" 2>/dev/null || true)"
         [ -n "$VERSION" ] && SERVER_VERSION="$VERSION"
     fi
 
+    # ── Confirm deletion ────────────────────────────────────
     echo ""
     warn "Permanently delete:"
     echo -e "  ${BOLD}Server :${RESET} $SERVER_NAME"
@@ -105,6 +115,7 @@ while true; do
         continue
     fi
 
+    # ── Delete server ───────────────────────────────────────
     echo ""
     info "Deleting server: $SERVER_NAME..."
 
