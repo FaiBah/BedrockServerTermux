@@ -55,5 +55,5 @@ EOF
 fi
 
 echo ""
-echo -e "${GREEN}${BOLD}✓ BedrockTermux environment ready!${RESET}"
+echo -e "${GREEN}${BOLD}✓ BedrockServerTermux environment ready!${RESET}"
 echo ""
