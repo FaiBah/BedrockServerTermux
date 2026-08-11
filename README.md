@@ -4,47 +4,60 @@ A management system for running a Minecraft Bedrock Dedicated Server on Android 
 
 ## Requirements
 
-- Termux (F-Droid build recommended)
+- [Termux](https://termux.dev) (F-Droid build recommended)
 
 ## Installation
 
-1. Set up the Debian proot environment (run in Termux):
+**1. Set up the Debian proot environment (run in Termux):**
 
+```bash
 curl -fsSL https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup_proot.sh | bash
+```
 
 Alternatively, download and run separately:
 
+```bash
 wget https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup_proot.sh
 bash setup_proot.sh
+```
 
-This installs proot-distro, installs Debian, and creates a pdd command for entering the environment.
+This installs `proot-distro`, installs Debian, and creates a `pdd` command for entering the environment.
 
 Optionally, create a symlink to access the Debian filesystem directly from Termux:
 
+```bash
 ln -s $PREFIX/var/lib/proot-distro/containers/debian/rootfs ~/debian
+```
 
-2. Enter Debian and run the setup script:
+**2. Enter Debian and run the setup script:**
 
+```bash
 pdd
 curl -fsSL https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup.sh | bash
+```
 
 Alternatively, download and run separately:
 
+```bash
 pdd
 wget https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup.sh
 bash setup.sh
+```
 
-This installs dependencies (box64, jq, unzip, etc.), downloads the manager, and creates the bds command.
+This installs dependencies (`box64`, `jq`, `unzip`, etc.), downloads the manager, and creates the `bds` command.
 
 ## Usage
 
 Enter the proot environment and launch the manager:
 
+```bash
 pdd
 bds
+```
 
 This presents the following menu:
 
+```
 1) Run server
 2) Install / Update server
 3) Backup server
@@ -52,9 +65,11 @@ This presents the following menu:
 5) Delete server
 6) Update manager
 0) Exit
+```
 
 ## File structure
 
+```
 Bedrock Server/
 ├── manage.sh
 ├── menu/
@@ -68,13 +83,13 @@ Bedrock Server/
 └── Backups/
     └── <server_name>/
         └── <server_name>_<type>_<timestamp>.tar.gz
+```
 
 ## Notes
 
-- All commands (bds, install, run, etc.) must be executed as root within the Debian proot.
-- Multiple servers may be installed concurrently in separate folders under Servers/.
-- To stop a running server, press Ctrl+C.
-- Unexpected server crashes trigger an automatic restart after five seconds.
+- All commands (`bds`, install, run, etc.) must be executed as root within the Debian proot.
+- Multiple servers may be installed concurrently in separate folders under `Servers/`.
+- To stop a running server, press `Ctrl+C`. Unexpected crashes trigger an automatic restart after five seconds.
 
 ## License
 
