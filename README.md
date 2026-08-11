@@ -1,61 +1,72 @@
-# BedrockServerTermux
+# 🧱 BedrockServerTermux
 
-A management system for running a Minecraft Bedrock Dedicated Server on Android via Termux. The server runs inside a Debian proot environment, using box64 to execute the x86_64 server binary on ARM devices.
+> Run a **Minecraft Bedrock Dedicated Server** on Android via **Termux** — inside a Debian proot, powered by **box64** to run the x86_64 server binary on ARM.
 
-## Requirements
+![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)
+![Termux](https://img.shields.io/badge/Termux-required-000000?logo=gnu-bash&logoColor=white)
+![Debian](https://img.shields.io/badge/env-Debian%20proot-A81D33?logo=debian&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-- [Termux](https://termux.dev) (F-Droid build recommended)
+---
 
-## Installation
+## 📋 Requirements
 
-**1. Set up the Debian proot environment (run in Termux):**
+- 📱 [Termux](https://termux.dev) (F-Droid build recommended)
+
+---
+
+## ⚙️ Installation
+
+### 1️⃣ Set up the Debian proot environment (in Termux)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup_proot.sh | bash
 ```
 
-Alternatively, download and run separately:
+<details>
+<summary>Or download and run separately</summary>
 
 ```bash
 wget https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup_proot.sh
 bash setup_proot.sh
 ```
+</details>
 
-This installs `proot-distro`, installs Debian, and creates a `pdd` command for entering the environment.
+This installs `proot-distro`, installs Debian, and creates a **`pdd`** command to enter the environment.
 
-Optionally, create a symlink to access the BedrockServerTermux directory directly from Termux:
+💡 Optional — symlink the project folder for easy access from Termux:
 
 ```bash
 ln -s $PREFIX/var/lib/proot-distro/containers/debian/rootfs/root/BedrockServerTermux ~/BedrockServerTermux
 ```
 
-**2. Enter Debian and run the setup script:**
+### 2️⃣ Enter Debian and run the setup script
 
 ```bash
 pdd
 curl -fsSL https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup.sh | bash
 ```
 
-Alternatively, download and run separately:
+<details>
+<summary>Or download and run separately</summary>
 
 ```bash
 pdd
 wget https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup.sh
 bash setup.sh
 ```
+</details>
 
-This installs dependencies (`box64`, `jq`, `unzip`, etc.), downloads the manager, and creates the `bds` command.
+This installs dependencies (`box64`, `jq`, `unzip`, etc.), downloads the manager, and creates the **`bds`** command.
 
-## Usage
+---
 
-Enter the proot environment and launch the manager:
+## 🚀 Usage
 
 ```bash
 pdd
 bds
 ```
-
-This presents the following menu:
 
 ```
 1) Run server
@@ -67,13 +78,15 @@ This presents the following menu:
 0) Exit
 ```
 
-## File structure
+---
+
+## 🗂️ File Structure
 
 ```
 BedrockServerTermux/
 ├── manage.sh
 ├── menu/
-│   ├── [*].sh
+│   └── [*].sh
 ├── Servers/
 │   └── <server_name>/
 │       ├── bedrock_server
@@ -84,13 +97,3 @@ BedrockServerTermux/
     └── <server_name>/
         └── <server_name>_<type>_<timestamp>.tar.gz
 ```
-
-## Notes
-
-- All commands (`bds`, install, run, etc.) must be executed as root within the Debian proot.
-- Multiple servers may be installed concurrently in separate folders under `Servers/`.
-- To stop a running server, press `Ctrl+C`. Unexpected crashes trigger an automatic restart after five seconds.
-
-## License
-
-MIT
