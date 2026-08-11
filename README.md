@@ -14,6 +14,13 @@ A management system for running a Minecraft Bedrock Dedicated Server on Android 
 curl -fsSL https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup_proot.sh | bash
 ```
 
+Alternatively, download and run separately:
+
+```bash
+wget https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup_proot.sh
+bash setup_proot.sh
+```
+
 This installs `proot-distro`, installs Debian, and creates a `pdd` command for entering the environment.
 
 Optionally, create a symlink to access the Debian filesystem directly from Termux:
@@ -27,6 +34,14 @@ ln -s $PREFIX/var/lib/proot-distro/containers/debian/rootfs ~/debian
 ```bash
 pdd
 curl -fsSL https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup.sh | bash
+```
+
+Alternatively, download and run separately:
+
+```bash
+pdd
+wget https://raw.githubusercontent.com/FaiBah/BedrockServerTermux/main/setup.sh
+bash setup.sh
 ```
 
 This installs dependencies (`box64`, `jq`, `unzip`, etc.), downloads the manager, and creates the `bds` command.
