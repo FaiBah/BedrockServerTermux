@@ -19,25 +19,39 @@ err(){ echo -e "${RED}[✗]${RESET} $1"; exit 1; }
 
 ok "Termux detected."
 
-# Check proot-distro
+# Check / install / update proot-distro
 if command -v proot-distro >/dev/null 2>&1; then
     ok "proot-distro already installed."
+
+    info "Checking for proot-distro updates..."
+
+    pkg update -y >/dev/null 2>&1 ||
+        warn "Failed to update Termux package lists."
+
+    pkg upgrade proot-distro -y ||
+        warn "Failed to update proot-distro."
 else
     info "Installing proot-distro..."
+
     pkg install proot-distro -y ||
         err "Failed to install proot-distro."
+
+    ok "proot-distro installed."
 fi
 
-# Check Debian
+# Check / install Debian
 if proot-distro login debian -- true >/dev/null 2>&1; then
     ok "Debian is already installed."
 else
     info "Installing Debian..."
+
     proot-distro install debian ||
         err "Debian installation failed."
+
+    ok "Debian installed."
 fi
 
-# Check pdd
+# Check / create pdd
 PDD="$PREFIX/bin/pdd"
 
 if [ -x "$PDD" ]; then
@@ -51,6 +65,7 @@ proot-distro login debian
 EOF
 
     chmod +x "$PDD"
+
     ok "'pdd' created."
 fi
 
