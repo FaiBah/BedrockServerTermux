@@ -23,10 +23,10 @@ bash setup_proot.sh
 
 This installs `proot-distro`, installs Debian, and creates a `pdd` command for entering the environment.
 
-Optionally, create a symlink to access the Debian filesystem directly from Termux:
+Optionally, create a symlink to access the BedrockServerTermux directory directly from Termux:
 
 ```bash
-ln -s $PREFIX/var/lib/proot-distro/containers/debian/rootfs ~/debian
+ln -s $PREFIX/var/lib/proot-distro/containers/debian/rootfs/root/BedrockServerTermux ~/BedrockServerTermux
 ```
 
 **2. Enter Debian and run the setup script:**
