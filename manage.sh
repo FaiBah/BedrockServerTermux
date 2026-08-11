@@ -7,7 +7,7 @@ BOLD='\033[1m'
 RESET='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MENU_DIR="$SCRIPT_DIR/.menu"
+MENU_DIR="$SCRIPT_DIR/menu"
 
 err(){ echo -e "${RED}[✗]${RESET} $1"; }
 pause(){ echo ""; read -rp "Press Enter to continue..."; }
