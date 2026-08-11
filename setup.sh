@@ -16,7 +16,7 @@ err(){ echo -e "${RED}[✗]${RESET} $1"; exit 1; }
 REPO="https://github.com/FaiBah/BedrockServerTermux"
 
 SERVER_ROOT="$HOME/Bedrock Server"
-SERVER_DATA="$SERVER_ROOT/Data"
+SERVER_DATA="$SERVER_ROOT/Servers"
 BACKUP_ROOT="$SERVER_ROOT/Backups"
 
 PACKAGES="git box64 sudo jq unzip tar curl wget gpg rsync"
@@ -143,7 +143,7 @@ echo ""
 echo -e "${GREEN}${BOLD}✓ BedrockServerTermux setup complete!${RESET}"
 echo ""
 echo -e "  ${BOLD}Server root:${RESET} $SERVER_ROOT"
-echo -e "  ${BOLD}Server data:${RESET} $SERVER_DATA"
+echo -e "  ${BOLD}Servers:${RESET}     $SERVER_DATA"
 echo -e "  ${BOLD}Backups:${RESET}     $BACKUP_ROOT"
 echo ""
 echo -e "  ${BOLD}Run:${RESET} bds"
