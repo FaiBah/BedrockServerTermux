@@ -252,8 +252,6 @@ while true; do
     CACHE_FILE="$CACHE_ROOT/bedrock-server-${INSTALLED_VERSION}.zip"
     TEMP_CACHE="$CACHE_FILE.tmp"
 
-    echo ""
-
     if [ -s "$CACHE_FILE" ] && unzip -tq "$CACHE_FILE" >/dev/null 2>&1; then
         info "Using cached BDS: $(basename "$CACHE_FILE")"
     else
