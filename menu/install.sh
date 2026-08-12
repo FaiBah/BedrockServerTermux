@@ -231,6 +231,13 @@ while true; do
     echo -e "${BOLD}Server :${RESET} $SERVER_NAME"
     echo ""
 
+    IS_UPDATE=false
+
+    if [ -d "$SERVER_DIR" ] &&
+       [ -n "$(find "$SERVER_DIR" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+        IS_UPDATE=true
+    fi
+
     mkdir -p "$SERVER_DIR"
 
     INSTALLED_VERSION=""
@@ -252,15 +259,23 @@ while true; do
     CACHE_FILE="$CACHE_ROOT/bedrock-server-${INSTALLED_VERSION}.zip"
     TEMP_CACHE="$CACHE_FILE.tmp"
 
-    if [ -s "$CACHE_FILE" ] && unzip -tq "$CACHE_FILE" >/dev/null 2>&1; then
+    if [ -s "$CACHE_FILE" ] &&
+       unzip -tq "$CACHE_FILE" >/dev/null 2>&1; then
+
         info "Using cached BDS: $(basename "$CACHE_FILE")"
+
     else
-        [ -f "$CACHE_FILE" ] && warn "Cached ZIP is invalid. Re-downloading."
+        [ -f "$CACHE_FILE" ] &&
+            warn "Cached ZIP is invalid. Re-downloading."
+
         rm -f "$CACHE_FILE" "$TEMP_CACHE"
 
         info "Downloading BDS $INSTALLED_VERSION..."
 
-        if ! wget -q --show-progress "$DOWNLOAD_URL" -O "$TEMP_CACHE"; then
+        if ! wget -q --show-progress \
+            "$DOWNLOAD_URL" \
+            -O "$TEMP_CACHE"; then
+
             err "Download failed."
             rm -f "$TEMP_CACHE"
             sleep 2
@@ -284,6 +299,7 @@ while true; do
         fi
 
         mv "$TEMP_CACHE" "$CACHE_FILE"
+
         ok "BDS cached: $CACHE_FILE"
     fi
 
@@ -297,64 +313,93 @@ while true; do
     BACKUP_DIR="$BACKUP_ROOT/$SERVER_NAME"
     BACKUP_ITEMS=()
 
-    for path in "${BACKUP_PATHS[@]}"; do
-        [ -e "$SERVER_DIR/$path" ] && BACKUP_ITEMS+=("$path")
-    done
+    if [ "$IS_UPDATE" = true ]; then
+        for path in "${BACKUP_PATHS[@]}"; do
+            [ -e "$SERVER_DIR/$path" ] &&
+                BACKUP_ITEMS+=("$path")
+        done
 
-    if [ "${#BACKUP_ITEMS[@]}" -gt 0 ]; then
-        mkdir -p "$BACKUP_DIR"
+        if [ "${#BACKUP_ITEMS[@]}" -gt 0 ]; then
+            mkdir -p "$BACKUP_DIR"
 
-        BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).tar.gz"
-        BACKUP_PATH="$BACKUP_DIR/$BACKUP_FILE"
+            BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).tar.gz"
+            BACKUP_PATH="$BACKUP_DIR/$BACKUP_FILE"
 
-        info "Backing up server configuration..."
+            info "Backing up server configuration..."
 
-        if ! tar -czf "$BACKUP_PATH" \
-            -C "$SERVER_DIR" \
-            "${BACKUP_ITEMS[@]}"; then
-            err "Backup failed. Update aborted."
-            rm -f "$BACKUP_PATH"
-            sleep 2
-            continue
+            if ! tar -czf "$BACKUP_PATH" \
+                -C "$SERVER_DIR" \
+                "${BACKUP_ITEMS[@]}"; then
+
+                err "Backup failed. Update aborted."
+                rm -f "$BACKUP_PATH"
+                sleep 2
+                continue
+            fi
+
+            ok "Backup saved: $BACKUP_PATH"
+        else
+            warn "No configuration files found. Skipping backup."
         fi
-
-        ok "Backup saved: $BACKUP_PATH"
-    else
-        warn "No configuration files found. Skipping backup."
     fi
 
-    echo ""
-    info "Removing old server files..."
+    if [ "$IS_UPDATE" = true ]; then
+        echo ""
+        info "Removing old server files..."
 
-    FIND_ARGS=()
+        FIND_ARGS=()
 
-    for path in "${KEEP_PATHS[@]}"; do
-        FIND_ARGS+=(-not -name "$path")
-    done
+        for path in "${KEEP_PATHS[@]}"; do
+            FIND_ARGS+=(-not -name "$path")
+        done
 
-    find "$SERVER_DIR" \
-        -mindepth 1 \
-        -maxdepth 1 \
-        "${FIND_ARGS[@]}" \
-        -exec rm -rf {} +
+        find "$SERVER_DIR" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            "${FIND_ARGS[@]}" \
+            -exec rm -rf {} +
 
-    ok "Old server files removed."
+        ok "Old server files removed."
+    fi
 
     echo ""
     info "Extracting server files..."
 
-    UNZIP_EXCLUDES=()
+    if [ "$IS_UPDATE" = true ]; then
+        UNZIP_EXCLUDES=()
 
-    for path in "${KEEP_PATHS[@]}"; do
-        UNZIP_EXCLUDES+=("$path" "$path/*")
-    done
+        for path in "${KEEP_PATHS[@]}"; do
+            if [ -e "$SERVER_DIR/$path" ]; then
+                UNZIP_EXCLUDES+=("$path" "$path/*")
+            fi
+        done
 
-    if ! unzip -o "$CACHE_FILE" \
-        -d "$SERVER_DIR" \
-        -x "${UNZIP_EXCLUDES[@]}" >/dev/null; then
-        err "Extraction failed."
-        sleep 2
-        continue
+        if [ "${#UNZIP_EXCLUDES[@]}" -gt 0 ]; then
+            if ! unzip -o "$CACHE_FILE" \
+                -d "$SERVER_DIR" \
+                -x "${UNZIP_EXCLUDES[@]}" >/dev/null; then
+
+                err "Extraction failed."
+                sleep 2
+                continue
+            fi
+        else
+            if ! unzip -o "$CACHE_FILE" \
+                -d "$SERVER_DIR" >/dev/null; then
+
+                err "Extraction failed."
+                sleep 2
+                continue
+            fi
+        fi
+    else
+        if ! unzip -o "$CACHE_FILE" \
+            -d "$SERVER_DIR" >/dev/null; then
+
+            err "Extraction failed."
+            sleep 2
+            continue
+        fi
     fi
 
     if [ ! -f "$SERVER_DIR/bedrock_server" ]; then
@@ -369,13 +414,19 @@ while true; do
     ok "Server files installed."
 
     echo ""
-    ok "Install / update complete."
+    if [ "$IS_UPDATE" = true ]; then
+        ok "Server update complete."
+    else
+        ok "Server installation complete."
+    fi
+
     echo ""
     echo -e "${BOLD}Version:${RESET} $INSTALLED_VERSION"
     echo -e "${BOLD}Server :${RESET} $SERVER_DIR"
 
-    [ -n "$BACKUP_FILE" ] &&
+    if [ -n "$BACKUP_FILE" ]; then
         echo -e "${BOLD}Backup :${RESET} $BACKUP_PATH"
+    fi
 
     echo -e "${BOLD}Cache  :${RESET} $CACHE_FILE"
 
