@@ -11,8 +11,10 @@ err(){ echo -e "${RED}[✗]${RESET} $1"; }
 pause(){ sleep "${1:-1}"; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVER_ROOT="$(dirname "$SCRIPT_DIR")/Servers"
-BACKUP_ROOT="$(dirname "$SCRIPT_DIR")/Backups"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+SERVER_ROOT="$PROJECT_ROOT/Servers"
+BACKUP_ROOT="$PROJECT_ROOT/Backups"
 VERSION_FILE="version.txt"
 
 title(){
@@ -28,10 +30,10 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-[ -d "$SERVER_ROOT" ] || {
+if [ ! -d "$SERVER_ROOT" ]; then
     err "Servers directory not found: $SERVER_ROOT"
     exit 1
-}
+fi
 
 mkdir -p "$BACKUP_ROOT"
 
@@ -57,8 +59,9 @@ while true; do
         name="$(basename "$dir")"
         version=""
 
-        [ -f "$dir/$VERSION_FILE" ] &&
+        if [ -f "$dir/$VERSION_FILE" ]; then
             version="$(head -n1 "$dir/$VERSION_FILE" 2>/dev/null || true)"
+        fi
 
         if [ -n "$version" ]; then
             echo -e "  ${CYAN}$((i + 1)))${RESET} $name ${GREEN}(v$version)${RESET}"
@@ -105,10 +108,10 @@ while true; do
         echo ""
         echo -e "${BOLD}Backup Type:${RESET}"
         echo ""
-        echo "1) Full Server"
-        echo "2) World Data Only"
-        echo "3) Server Configuration"
-        echo "0) Back"
+        echo -e "  ${CYAN}1)${RESET} Full Server"
+        echo -e "  ${CYAN}2)${RESET} Worlds Only"
+        echo -e "  ${CYAN}3)${RESET} Configuration"
+        echo -e "  ${CYAN}0)${RESET} Back"
         echo ""
 
         read -rp "Select an option [0-3]: " type
@@ -122,12 +125,12 @@ while true; do
 
             1)
                 LABEL="Full Server"
-                FILE="${SERVER_NAME}_full_$(date +%Y%m%d_%H%M%S).tar.gz"
-                COMMAND=(tar -czf "$BACKUP_DIR/$FILE" -C "$SERVER_DIR" .)
+                FILE="backup_full_$(date +%Y%m%d_%H%M%S).tar.gz"
+                COMMAND=(tar -czf "$BACKUP_DIR/$FILE.tmp" -C "$SERVER_DIR" .)
                 ;;
 
             2)
-                LABEL="World Data Only"
+                LABEL="Worlds Only"
 
                 if [ ! -d "$SERVER_DIR/worlds" ]; then
                     warn "No worlds directory found."
@@ -135,12 +138,12 @@ while true; do
                     continue
                 fi
 
-                FILE="${SERVER_NAME}_worlds_$(date +%Y%m%d_%H%M%S).tar.gz"
-                COMMAND=(tar -czf "$BACKUP_DIR/$FILE" -C "$SERVER_DIR" worlds)
+                FILE="backup_worlds_$(date +%Y%m%d_%H%M%S).tar.gz"
+                COMMAND=(tar -czf "$BACKUP_DIR/$FILE.tmp" -C "$SERVER_DIR" worlds)
                 ;;
 
             3)
-                LABEL="Server Configuration"
+                LABEL="Configuration"
                 FILES=()
 
                 for item in \
@@ -155,13 +158,13 @@ while true; do
                 done
 
                 if [ "${#FILES[@]}" -eq 0 ]; then
-                    warn "No server configuration files or folders found."
+                    warn "No configuration files or folders found."
                     pause
                     continue
                 fi
 
-                FILE="${SERVER_NAME}_config_$(date +%Y%m%d_%H%M%S).tar.gz"
-                COMMAND=(tar -czf "$BACKUP_DIR/$FILE" -C "$SERVER_DIR" "${FILES[@]}")
+                FILE="backup_config_$(date +%Y%m%d_%H%M%S).tar.gz"
+                COMMAND=(tar -czf "$BACKUP_DIR/$FILE.tmp" -C "$SERVER_DIR" "${FILES[@]}")
                 ;;
 
             *)
@@ -189,19 +192,28 @@ while true; do
         info "Creating backup..."
 
         BACKUP_FILE="$BACKUP_DIR/$FILE"
+        TEMP_FILE="$BACKUP_FILE.tmp"
+
+        rm -f "$TEMP_FILE"
 
         if "${COMMAND[@]}"; then
-            SIZE="$(du -h "$BACKUP_FILE" | cut -f1)"
+            if mv "$TEMP_FILE" "$BACKUP_FILE"; then
+                SIZE="$(du -h "$BACKUP_FILE" | cut -f1)"
 
-            echo ""
-            ok "Backup created successfully."
-            echo ""
-            echo -e "  ${BOLD}Server :${RESET} $SERVER_NAME"
-            echo -e "  ${BOLD}Version:${RESET} $SERVER_VERSION"
-            echo -e "  ${BOLD}Type   :${RESET} $LABEL"
-            echo -e "  ${BOLD}File   :${RESET} $BACKUP_FILE"
-            echo -e "  ${BOLD}Size   :${RESET} $SIZE"
+                echo ""
+                ok "Backup created successfully."
+                echo ""
+                echo -e "  ${BOLD}Server :${RESET} $SERVER_NAME"
+                echo -e "  ${BOLD}Version:${RESET} $SERVER_VERSION"
+                echo -e "  ${BOLD}Type   :${RESET} $LABEL"
+                echo -e "  ${BOLD}File   :${RESET} $BACKUP_FILE"
+                echo -e "  ${BOLD}Size   :${RESET} $SIZE"
+            else
+                rm -f "$TEMP_FILE"
+                err "Failed to finalize backup."
+            fi
         else
+            rm -f "$TEMP_FILE"
             err "Backup failed."
         fi
 
