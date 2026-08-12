@@ -238,8 +238,6 @@ while true; do
         IS_UPDATE=true
     fi
 
-    mkdir -p "$SERVER_DIR"
-
     INSTALLED_VERSION=""
 
     if [[ "$DOWNLOAD_URL" =~ bedrock-server-([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\.zip ]]; then
@@ -258,6 +256,8 @@ while true; do
 
     CACHE_FILE="$CACHE_ROOT/bedrock-server-${INSTALLED_VERSION}.zip"
     TEMP_CACHE="$CACHE_FILE.tmp"
+
+    echo ""
 
     if [ -s "$CACHE_FILE" ] &&
        unzip -tq "$CACHE_FILE" >/dev/null 2>&1; then
@@ -299,7 +299,6 @@ while true; do
         fi
 
         mv "$TEMP_CACHE" "$CACHE_FILE"
-
         ok "BDS cached: $CACHE_FILE"
     fi
 
@@ -308,6 +307,9 @@ while true; do
         sleep 2
         continue
     fi
+
+    # Only create a new server directory after the BDS is ready.
+    mkdir -p "$SERVER_DIR"
 
     BACKUP_FILE=""
     BACKUP_DIR="$BACKUP_ROOT/$SERVER_NAME"
